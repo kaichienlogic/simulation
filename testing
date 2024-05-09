@@ -1,0 +1,329 @@
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
+node=pd.read_csv("node.csv", header=None)
+element=pd.read_table("element_part.txt", sep='\D+', header=None)
+stress=pd.read_csv("effective_stress.csv", header=None)
+n=node.values
+e=element.values
+von_stress=stress.values
+node_x=np.zeros(shape=len(e)*10)
+node_y=np.zeros(shape=len(e)*10)
+node_z=np.zeros(shape=len(e)*10)
+node_n=np.zeros(shape=len(e)*10)
+n_x=np.zeros(shape=len(n))
+n_y=np.zeros(shape=len(n))
+n_z=np.zeros(shape=len(n))
+n_n=np.zeros(shape=len(n))
+
+#高斯積分點創立
+r=np.zeros(shape=8)
+s=np.zeros(shape=8)
+t=np.zeros(shape=8)
+r[0]=0.0158359
+r[1]=0.3280546
+r[2]=0.3280546
+r[3]=0.3280546
+r[4]=0.6791431
+r[5]=0.1069522
+r[6]=0.1069522
+r[7]=0.1069522
+s[0]=0.3280546
+s[1]=0.0158359
+s[2]=0.3280546
+s[3]=0.3280546
+s[4]=0.1069522
+s[5]=0.6791431
+s[6]=0.1069522
+s[7]=0.1069522
+t[0]=0.3280546
+t[1]=0.3280546
+t[2]=0.0158390
+t[3]=0.3280546
+t[4]=0.1069522
+t[5]=0.1069522
+t[6]=0.6791431
+t[7]=0.1069522
+s1=np.zeros((8,8,8))
+s2=np.zeros((8,8,8))
+s3=np.zeros((8,8,8))
+s4=np.zeros((8,8,8))
+s5=np.zeros((8,8,8))
+s6=np.zeros((8,8,8))
+s7=np.zeros((8,8,8))
+s8=np.zeros((8,8,8))
+s9=np.zeros((8,8,8))
+s10=np.zeros((8,8,8))
+
+for j in range(0,8):
+    for k in range(0,8):
+        for h in range(0,8):
+            s1[j,k,h]=(1-r[j]-s[k]-t[h])*(2*(1-r[j]-s[k]-t[h])-1)
+            s2[j,k,h]=r[j]*(2*r[j]-1)
+            s3[j,k,h]=s[k]*(2*s[k]-1)
+            s4[j,k,h]=t[h]*(2*t[h]-1)
+            s5[j,k,h]=4*(1-r[j]-s[k]-t[h])*r[j]
+            s6[j,k,h]=4*r[j]*s[k]
+            s7[j,k,h]=4*s[k]*(1-r[j]-s[k]-t[h])
+            s8[j,k,h]=4*t[h]*(1-r[j]-s[k]-t[h])
+            s9[j,k,h]=4*r[j]*t[h]
+            s10[j,k,h]=4*s[k]*t[h]
+#高斯積分點創立
+
+
+c=0
+for j in range(0,len(e)):
+    for k in range(1,11):
+        node_n[c]=e[j,k]
+        c=c+1
+#print(node_n)
+print(len(node_n))
+print(len(n))
+for j in range(0,len(node_n)):
+    for k in range(0,len(n)):
+        if node_n[j] == n[k,0]:
+           node_x[j]=n[k,1]
+           node_y[j]=n[k,2]
+           node_z[j]=n[k,3]
+        else: 
+           continue
+
+for j in range(0,len(n)):
+           n_n[j]=n[j,0]
+           n_x[j]=n[j,1]
+           n_y[j]=n[j,2]
+           n_z[j]=n[j,3]
+
+gauss_x=np.zeros((len(e),8))
+gauss_y=np.zeros((len(e),8))
+gauss_z=np.zeros((len(e),8))
+gauss_s=np.zeros((len(e),8))
+element_x=np.zeros((len(e),11))
+element_y=np.zeros((len(e),11))
+element_z=np.zeros((len(e),11))
+effective_stress=np.zeros((len(e),11))
+for j in range(0,len(e)):
+    nodal_x=np.zeros(shape=10)
+    nodal_y=np.zeros(shape=10)
+    nodal_z=np.zeros(shape=10)
+    nodal_s=np.zeros(shape=10)
+    e_x=0
+    e_y=0
+    e_z=0
+    e_s=0
+    element_x[j,0]=e[j,0]
+    element_y[j,0]=e[j,0]
+    element_z[j,0]=e[j,0]
+    effective_stress[j,0]=e[j,0]
+    for k in range(1,11):
+        for h in range(0,len(n)):
+            if e[j,k]==n[h,0]:
+               element_x[j,k]=n[h,1]
+               element_y[j,k]=n[h,2]
+               element_z[j,k]=n[h,3]
+               effective_stress[j,k]=von_stress[h,1]
+               continue
+            else:
+                continue
+        nodal_x[k-1]=element_x[j,k]
+        nodal_y[k-1]=element_y[j,k]
+        nodal_z[k-1]=element_z[j,k]
+        nodal_s[k-1]=effective_stress[j,k]
+    for k1 in range(0,8):
+                tx=nodal_x.reshape(10,1)
+                ty=nodal_y.reshape(10,1)
+                tz=nodal_z.reshape(10,1)
+                ts=nodal_s.reshape(10,1)
+                shape=np.zeros(shape=10)
+                shape[0]=s1[k1,k1,k1]
+                shape[1]=s2[k1,k1,k1]
+                shape[2]=s3[k1,k1,k1]
+                shape[3]=s4[k1,k1,k1]
+                shape[4]=s5[k1,k1,k1]
+                shape[5]=s6[k1,k1,k1]
+                shape[6]=s7[k1,k1,k1]
+                shape[7]=s8[k1,k1,k1]
+                shape[8]=s9[k1,k1,k1]
+                shape[9]=s10[k1,k1,k1]
+                e_x=np.dot(shape,tx)
+                e_y=np.dot(shape,ty)
+                e_z=np.dot(shape,tz)
+                e_s=np.dot(shape,ts)
+                #print('e_x')
+                #print(e_x)
+                #print(e_y)
+                #print(e_z)
+                gauss_x[j,k1]=e_x
+                gauss_y[j,k1]=e_y
+                gauss_z[j,k1]=e_z
+                gauss_s[j,k1]=e_s
+
+
+
+
+fig1=plt.figure()
+#ax=Axes3D(fig1)
+ax=fig1.gca(projection='3d')
+#ax.scatter(node_x, node_y, node_z, c='k', marker='o', s=1)
+
+                
+
+#ax.scatter(n_x, n_y, n_z, c='b', marker='o', s=1)
+for j in range(0,len(e)):
+    n1=e[j,1]-1
+    n2=e[j,2]-1
+    n3=e[j,3]-1
+    n4=e[j,4]-1
+    n5=e[j,5]-1
+    n6=e[j,6]-1
+    n7=e[j,7]-1
+    n8=e[j,8]-1
+    n9=e[j,9]-1
+    n10=e[j,10]-1
+    x1=np.zeros(shape=2)
+    y1=np.zeros(shape=2)
+    z1=np.zeros(shape=2)
+    x1[0]=n[n1,1]
+    x1[1]=n[n5,1]
+    y1[0]=n[n1,2]
+    y1[1]=n[n5,2]
+    z1[0]=n[n1,3]
+    z1[1]=n[n5,3]
+    ax.plot(x1,y1,z1,c='k')
+    x2=np.zeros(shape=2)
+    y2=np.zeros(shape=2)
+    z2=np.zeros(shape=2)
+    x2[0]=n[n5,1]
+    x2[1]=n[n2,1]
+    y2[0]=n[n5,2]
+    y2[1]=n[n2,2]
+    z2[0]=n[n5,3]
+    z2[1]=n[n2,3]
+    ax.plot(x2,y2,z2,c='k')
+    x3=np.zeros(shape=2)
+    y3=np.zeros(shape=2)
+    z3=np.zeros(shape=2)
+    x3[0]=n[n2,1]
+    x3[1]=n[n6,1]
+    y3[0]=n[n2,2]
+    y3[1]=n[n6,2]
+    z3[0]=n[n2,3]
+    z3[1]=n[n6,3]
+    ax.plot(x3,y3,z3,c='k')
+    x4=np.zeros(shape=2)
+    y4=np.zeros(shape=2)
+    z4=np.zeros(shape=2)
+    x4[0]=n[n6,1]
+    x4[1]=n[n3,1]
+    y4[0]=n[n6,2]
+    y4[1]=n[n3,2]
+    z4[0]=n[n6,3]
+    z4[1]=n[n3,3]
+    ax.plot(x4,y4,z4,c='k')
+    x5=np.zeros(shape=2)
+    y5=np.zeros(shape=2)
+    z5=np.zeros(shape=2)
+    x5[0]=n[n2,1]
+    x5[1]=n[n9,1]
+    y5[0]=n[n2,2]
+    y5[1]=n[n9,2]
+    z5[0]=n[n2,3]
+    z5[1]=n[n9,3]
+    ax.plot(x5,y5,z5,c='k')
+    x6=np.zeros(shape=2)
+    y6=np.zeros(shape=2)
+    z6=np.zeros(shape=2)
+    x6[0]=n[n9,1]
+    x6[1]=n[n4,1]
+    y6[0]=n[n9,2]
+    y6[1]=n[n4,2]
+    z6[0]=n[n9,3]
+    z6[1]=n[n4,3]
+    ax.plot(x6,y6,z6,c='k')
+    x7=np.zeros(shape=2)
+    y7=np.zeros(shape=2)
+    z7=np.zeros(shape=2)
+    x7[0]=n[n8,1]
+    x7[1]=n[n4,1]
+    y7[0]=n[n8,2]
+    y7[1]=n[n4,2]
+    z7[0]=n[n8,3]
+    z7[1]=n[n4,3]
+    ax.plot(x7,y7,z7,c='k')
+    x8=np.zeros(shape=2)
+    y8=np.zeros(shape=2)
+    z8=np.zeros(shape=2)
+    x8[0]=n[n8,1]
+    x8[1]=n[n1,1]
+    y8[0]=n[n8,2]
+    y8[1]=n[n1,2]
+    z8[0]=n[n8,3]
+    z8[1]=n[n1,3]
+    ax.plot(x8,y8,z8,c='k')
+    x9=np.zeros(shape=2)
+    y9=np.zeros(shape=2)
+    z9=np.zeros(shape=2)
+    x9[0]=n[n7,1]
+    x9[1]=n[n1,1]
+    y9[0]=n[n7,2]
+    y9[1]=n[n1,2]
+    z9[0]=n[n7,3]
+    z9[1]=n[n1,3]
+    ax.plot(x9,y9,z9,c='k')
+    x10=np.zeros(shape=2)
+    y10=np.zeros(shape=2)
+    z10=np.zeros(shape=2)
+    x10[0]=n[n7,1]
+    x10[1]=n[n3,1]
+    y10[0]=n[n7,2]
+    y10[1]=n[n3,2]
+    z10[0]=n[n7,3]
+    z10[1]=n[n3,3]
+    ax.plot(x10,y10,z10,c='k')
+    x11=np.zeros(shape=2)
+    y11=np.zeros(shape=2)
+    z11=np.zeros(shape=2)
+    x11[0]=n[n3,1]
+    x11[1]=n[n10,1]
+    y11[0]=n[n3,2]
+    y11[1]=n[n10,2]
+    z11[0]=n[n3,3]
+    z11[1]=n[n10,3]
+    ax.plot(x11,y11,z11,c='k')
+    x12=np.zeros(shape=2)
+    y12=np.zeros(shape=2)
+    z12=np.zeros(shape=2)
+    x12[0]=n[n4,1]
+    x12[1]=n[n10,1]
+    y12[0]=n[n4,2]
+    y12[1]=n[n10,2]
+    z12[0]=n[n4,3]
+    z12[1]=n[n10,3]
+    ax.plot(x12,y12,z12,c='k')
+
+resultantlist=[]
+for c in node_n:
+     if c not in resultantlist:
+          resultantlist.append(c)
+print(len(resultantlist))
+for j in range(0,len(e)):
+    for k1 in range(0,8):
+                scatter=ax.scatter3D(gauss_x[j,k1], gauss_y[j,k1], gauss_z[j,k1], c=gauss_s[j,k1], marker='o', s=20)
+counter=0
+for j in range(0,len(resultantlist)):
+    counter=0
+    for h in range(0,len(node_n)):
+        if resultantlist[j] == node_n[h]:
+           if counter == 0:
+              counter=counter+1
+              ax.text(node_x[h],node_y[h],node_z[h],resultantlist[j])
+           else:
+               continue
+        else:
+            continue
+#ax.set_xlim(np.min(n_x),np.max(n_x))
+#ax.set_ylim(np.min(n_y),np.max(n_y))
+#ax.set_zlim(np.min(n_z),np.max(n_z))
+plt.colorbar(scatter)
+plt.show()
